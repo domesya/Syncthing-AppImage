@@ -17,7 +17,7 @@ export STARTUPWMCLASS=syncthing
 # Deploy dependencies
 quick-sharun \
   /usr/bin/zenity       \
-  /usr/lib/libanl.so    \
+  /usr/lib/libanl.so*   \
   /usr/bin/syncthing
 
 # Additional changes can be done in between here
