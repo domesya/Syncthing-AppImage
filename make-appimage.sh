@@ -21,6 +21,8 @@ quick-sharun \
   /usr/bin/syncthing
 
 # Additional changes can be done in between here
+mkdir -p ./AppDir/share/applications/
+mv /usr/share/applications/syncthing-start.desktop ./AppDir/share/applications/syncthing-start.desktop
 
 # Turn AppDir into AppImage
 quick-sharun --make-appimage
