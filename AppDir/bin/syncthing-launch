@@ -4,14 +4,14 @@
 #
 
 if [ -z "$1" ]; then
-  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server")
+  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || >&2 echo "Cancel was clicked or dialog was closed"
  
   case "$_choice" in
     "start syncthing ui")
       >&2 echo "start syncthing ui was selected"
       syncthing browser ;;
     "start syncthing server")
-      >&2 echo "start syncthing server"
+      >&2 echo "start syncthing server was selected"
       syncthing serve --no-browser --logfile=default ;;
   esac
 
