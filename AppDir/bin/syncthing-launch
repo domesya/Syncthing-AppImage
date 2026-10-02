@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# syncthing-launch
+#
+
+if [ -z "$1" ]; then
+  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server")
+ 
+  case "$_choice" in
+    "start syncthing ui")
+      >&2 echo "start syncthing ui was selected"
+      syncthing browser ;;
+    "start syncthing server")
+      >&2 echo "start syncthing server"
+      syncthing serve --no-browser --logfile=default ;;
+  esac
+
+else
+
+  syncthing "$@"
+
+fi
