@@ -6,9 +6,14 @@
 # needed since using `syncthing browser` fails when the host glibc and bundled glibc have different versions
 _syncthing_workaround() {
   _st_cfg="${STATEDIR:-$HOME/.local/state}/syncthing/config.xml"
-  _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
-  # zenity --info --title="Syncthing Web GUI" --text="GUI Address: $_address"
-  notify -di "Web GUI Address: $_address"
+  if [ ! -f "$_st_cfg" ]; then 
+    >&2 echo "config.xml not found, try running syncthing server first";
+    notify -de "config.xml not found, try running syncthing server first";
+  else
+    _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
+    # zenity --info --title="Syncthing Web GUI" --text="GUI Address: $_address"
+    notify -di "Web GUI Address: $_address"
+  fi
 }
 
 if [ -z "${1:-}" ]; then
