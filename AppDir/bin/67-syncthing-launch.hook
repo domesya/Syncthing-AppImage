@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# syncthing-launch
+#
+
+_notify_address() {
+  echo "Web GUI Address: $_address"
+  notify -di "Web GUI Address: $_address"
+}
+
+_syncthing_serve() {
+  syncthing serve --no-browser --logfile=default
+}
+
+_choice_main() {
+  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || >&2 echo "Cancel was clicked or dialog was closed"
+ 
+  case "$_choice" in
+    "start syncthing ui")
+      >&2 echo "start syncthing ui was selected"
+      _syncthing_workaround
+      exit 0
+      ;;
+    "start syncthing server")
+      >&2 echo "start syncthing server was selected"
+      _syncthing_serve
+      exit 0
+      ;;
+  esac
+ 
+}
+
+
+# needed since using `syncthing browser` by itself may fail(?)
+_syncthing_workaround() {
+  _st_cfg="${STATEDIR:-$HOME/.local/state}/syncthing/config.xml"
+  if [ ! -f "$_st_cfg" ]; then 
+    >&2 echo "config.xml not found, try running syncthing server first";
+    notify -de "config.xml not found, try running syncthing server first";
+  else
+
+    _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
+    
+    case "$_address" in
+      *://*)
+        ;;
+      *)
+        _address="https://$_address"
+        ;;
+    esac
+
+    xdg-open "$_address" || _notify_address
+  fi
+}
+
+
+if [ -z "${1:-}" ]; then
+  _choice_main
+  exit 0
+fi
+
+case "$1" in
+  browser)
+    _syncthing_workaround 
+    exit 0
+    ;;
+esac
