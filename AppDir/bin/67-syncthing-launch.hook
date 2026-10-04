@@ -28,8 +28,7 @@ _choice_main() {
   esac
 }
 
-# needed since using `syncthing browser` by itself will probably fail
-_syncthing_workaround() {
+_config_check() {
   _st_cfg_legacy="${CONFIGDIR:-$HOME/.config}/syncthing/config.xml"
   if [ -f "$_st_cfg_legacy" ]; then
     _st_cfg="$_st_cfg_legacy"
@@ -40,7 +39,13 @@ _syncthing_workaround() {
     >&2 echo "config.xml not found, try running syncthing server first";
     notify -de "config.xml not found, try running syncthing server first";
     return 1
-  else
+  fi
+  return 0
+}
+
+# needed since using `syncthing browser` by itself will probably fail
+_syncthing_workaround() {
+  if _config_check; then 
     _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
     case "$_address" in
       *://*)
@@ -55,6 +60,8 @@ _syncthing_workaround() {
       _notify_address;
     fi
     return 0
+  else
+    return 1
   fi
 }
 
