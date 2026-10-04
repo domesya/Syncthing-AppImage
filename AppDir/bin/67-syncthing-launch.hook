@@ -39,8 +39,9 @@ _config_check() {
     >&2 echo "config.xml not found, try running syncthing server first";
     notify -de "config.xml not found, try running syncthing server first";
     return 1
+  else
+    return 0
   fi
-  return 0
 }
 
 # needed since using `syncthing browser` by itself will probably fail
