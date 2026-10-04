@@ -1,8 +1,9 @@
 #!/bin/sh
 #
-# syncthing-launch
+# 67-syncthing-launch.hook
 #
 
+# needs "$_address"
 _notify_address() {
   echo "Web GUI Address: $_address"
   notify -di "Web GUI Address: $_address"
@@ -14,7 +15,6 @@ _syncthing_serve() {
 
 _choice_main() {
   _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || >&2 echo "Cancel was clicked or dialog was closed"
- 
   case "$_choice" in
     "start syncthing ui")
       >&2 echo "start syncthing ui was selected"
@@ -27,7 +27,6 @@ _choice_main() {
       exit 0
       ;;
   esac
- 
 }
 
 
@@ -38,18 +37,19 @@ _syncthing_workaround() {
     >&2 echo "config.xml not found, try running syncthing server first";
     notify -de "config.xml not found, try running syncthing server first";
   else
-
     _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
     
     case "$_address" in
       *://*)
         ;;
       *)
-        _address="https://$_address"
+        _address="http://$_address"
         ;;
     esac
 
-    xdg-open "$_address" || _notify_address
+    if is_cmd xdg-open; then xdg-open "$_address" || _notify_address;
+    else >&2 echo "We need xdg-open to open the browser"; _notify_address;
+    fi
   fi
 }
 
