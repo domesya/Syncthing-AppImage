@@ -14,54 +14,51 @@ _syncthing_serve() {
 }
 
 _choice_main() {
-  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || >&2 echo "Cancel was clicked or dialog was closed"
+  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || {
+    >&2 echo "Cancel was clicked or dialog was closed";
+    return 1;
+  } 
   case "$_choice" in
-    "start syncthing ui")
-      >&2 echo "start syncthing ui was selected"
-      _syncthing_workaround
-      exit 0
+    "start syncthing ui") _syncthing_workaround || return 1
       ;;
-    "start syncthing server")
-      >&2 echo "start syncthing server was selected"
-      _syncthing_serve
-      exit 0
+    "start syncthing server") _syncthing_serve || return 1 
       ;;
   esac
 }
 
-
-# needed since using `syncthing browser` by itself may fail(?)
+# needed since using `syncthing browser` by itself will probably fail
 _syncthing_workaround() {
   _st_cfg="${STATEDIR:-$HOME/.local/state}/syncthing/config.xml"
   if [ ! -f "$_st_cfg" ]; then 
     >&2 echo "config.xml not found, try running syncthing server first";
     notify -de "config.xml not found, try running syncthing server first";
+    return 1
   else
     _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
-    
     case "$_address" in
       *://*)
         ;;
-      *)
-        _address="http://$_address"
+      *) _address="http://$_address"
         ;;
     esac
-
-    if is_cmd xdg-open; then xdg-open "$_address" || _notify_address;
-    else >&2 echo "We need xdg-open to open the browser"; _notify_address;
+    if is_cmd xdg-open; then 
+      xdg-open "$_address" || _notify_address;
+    else 
+      >&2 echo "We need xdg-open to open the browser"; 
+      _notify_address;
     fi
+    return 0
   fi
 }
 
-
 if [ -z "${1:-}" ]; then
   _choice_main
-  exit 0
+  exit $?
 fi
 
 case "$1" in
   browser)
     _syncthing_workaround 
-    exit 0
+    exit $?
     ;;
 esac
