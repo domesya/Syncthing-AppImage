@@ -63,7 +63,7 @@ _prepare_address() {
 
 # fallback in cases where `syncthing browser` or `xdg-open` don't work
 _syncthing_workaround() {
-  if syncthing browser; then
+  if syncthing browser 2>/dev/null; then
     return 0
   elif _config_setup; then
     _prepare_address || return 1
