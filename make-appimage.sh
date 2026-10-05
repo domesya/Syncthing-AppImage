@@ -22,7 +22,7 @@ quick-sharun \
 
 # Additional changes can be done in between here
 mkdir -p ./AppDir/share/applications/
-mv /usr/share/applications/syncthing-start.desktop ./AppDir/share/applications/syncthing-start.desktop
+wget --retry-connrefused --tries=30 -O ./AppDir/share/applications/syncthing-start.desktop "https://raw.githubusercontent.com/syncthing/syncthing/refs/heads/main/etc/linux-desktop/syncthing-start.desktop"
 
 # Turn AppDir into AppImage
 quick-sharun --make-appimage
