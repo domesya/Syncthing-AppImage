@@ -72,6 +72,9 @@ if [ -z "${1:-}" ]; then
 fi
 
 case "$1" in
+  --)
+    shift
+    ;;
   browser)
     _syncthing_workaround 
     exit $?
