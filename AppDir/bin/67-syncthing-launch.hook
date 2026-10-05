@@ -28,7 +28,8 @@ _choice_main() {
   esac
 }
 
-_config_check() {
+# checks for config and prepares the variables needed for _prepare_address
+_config_setup() {
   _st_cfg_legacy="${CONFIGDIR}/syncthing/config.xml"
   if [ -f "$_st_cfg_legacy" ]; then
     _st_cfg="$_st_cfg_legacy"
@@ -44,9 +45,9 @@ _config_check() {
   fi
 }
 
-# needed since using `syncthing browser` by itself will probably fail
-_syncthing_workaround() {
-  if _config_check; then 
+# prepares the "$_address" var (needs _config_setup before it runs)
+_prepare_address() {
+  if is_cmd awk; then
     _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
     case "$_address" in
       *://*)
@@ -54,11 +55,24 @@ _syncthing_workaround() {
       *) _address="http://$_address"
         ;;
     esac
-    if is_cmd xdg-open; then 
+  else
+    err_msg "awk not found"
+    return 1
+  fi
+}
+
+# fallback in cases where `syncthing browser` or `xdg-open` don't work
+_syncthing_workaround() {
+  if syncthing browser; then
+    return 0
+  elif _config_setup; then
+    _prepare_address || return 1
+    if is_cmd xdg-open; then
       xdg-open "$_address" || _notify_address;
     else 
       >&2 echo "We need xdg-open to open the browser"; 
       _notify_address;
+      return 1
     fi
     return 0
   else
