@@ -5,92 +5,95 @@
 
 # needs "$_address"
 _notify_address() {
-  echo "Web GUI Address: $_address"
-  notify -di "Web GUI Address: $_address"
+    echo "Web GUI Address: $_address"
+    notify -di "Web GUI Address: $_address"
 }
 
 _syncthing_serve() {
-  syncthing serve --no-browser --logfile=default
+    syncthing serve --no-browser --logfile=default
 }
 
 _choice_main() {
-  _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || {
-    >&2 echo "Cancel was clicked or dialog was closed";
-    return 1;
-  } 
-  case "$_choice" in
-    "start syncthing ui") _syncthing_workaround || return 1
-      ;;
-    "start syncthing server") _syncthing_serve || return 1 
-      ;;
-    *) >&2 echo "How did we get here"; return 1
-      ;;
-  esac
+    _choice=$(zenity --list --radiolist --column="Select" --column="Item" TRUE "start syncthing ui" FALSE "start syncthing server") || {
+        >&2 echo "Cancel was clicked or dialog was closed";
+        return 1;
+    } 
+    case "$_choice" in
+        "start syncthing ui") _syncthing_workaround || return 1
+            ;;
+        "start syncthing server") _syncthing_serve || return 1 
+            ;;
+        *) >&2 echo "How did we get here"; return 1
+            ;;
+    esac
 }
 
 # checks for config and prepares the variables needed for _prepare_address
 _config_setup() {
-  _st_cfg_legacy="${CONFIGDIR}/syncthing/config.xml"
-  if [ -f "$_st_cfg_legacy" ]; then
-    _st_cfg="$_st_cfg_legacy"
-  else
-    _st_cfg="${STATEDIR}/syncthing/config.xml"
-  fi
-  if [ ! -f "$_st_cfg" ]; then 
-    >&2 echo "config.xml not found, try running syncthing server first";
-    notify -de "config.xml not found, try running syncthing server first";
-    return 1
-  else
-    return 0
-  fi
+    _st_cfg_legacy="${CONFIGDIR}/syncthing/config.xml"
+    if [ -f "$_st_cfg_legacy" ]; then
+        _st_cfg="$_st_cfg_legacy"
+    else
+        _st_cfg="${STATEDIR}/syncthing/config.xml"
+    fi
+    if [ ! -f "$_st_cfg" ]; then 
+        err_msg "config.xml not found, try running syncthing server first";
+        notify -de "config.xml not found, try running syncthing server first";
+        return 1
+    else
+        return 0
+    fi
 }
 
 # prepares the "$_address" var (needs _config_setup before it runs)
 _prepare_address() {
-  if is_cmd awk; then
+    if ! is_cmd awk; then
+        err_msg "awk not found"
+        return 1
+    fi
     _address=$(awk '/<gui/ {in_gui=1} /<\/gui>/ {in_gui=0} in_gui && /<address>/ {sub(/.*<address>/, ""); sub(/<\/address>.*/, ""); print}' "$_st_cfg")
+    [ -n "${_address:-}" ] || {
+        err_msg "Could not parse address from $_st_cfg"
+        return 1
+    }
     case "$_address" in
-      *://*)
-        ;;
-      *) _address="http://$_address"
-        ;;
+        *://*)
+            ;;
+        *) _address="http://$_address"
+            ;;
     esac
-  else
-    err_msg "awk not found"
-    return 1
-  fi
 }
 
 # fallback in cases where `syncthing browser` or `xdg-open` don't work
 _syncthing_workaround() {
-  if syncthing browser 2>/dev/null; then
-    return 0
-  elif _config_setup; then
-    _prepare_address || return 1
-    if is_cmd xdg-open; then
-      xdg-open "$_address" || _notify_address;
-    else 
-      >&2 echo "We need xdg-open to open the browser"; 
-      _notify_address;
-      return 1
+    if syncthing browser 2>/dev/null; then
+        return 0
+    elif _config_setup; then
+        _prepare_address || return 1
+        if is_cmd xdg-open; then
+            xdg-open "$_address" || { _notify_address; return 0; }
+        else 
+            >&2 echo "We need xdg-open to open the browser"; 
+            _notify_address;
+            return 0
+        fi
+        return 0
+    else
+        return 1
     fi
-    return 0
-  else
-    return 1
-  fi
 }
 
 if [ -z "${1:-}" ]; then
-  _choice_main
-  exit $?
+    _choice_main
+    exit $?
 fi
 
 case "$1" in
-  --)
-    shift
-    ;;
-  browser)
-    _syncthing_workaround 
-    exit $?
-    ;;
+    --)
+        shift
+        ;;
+    browser)
+        _syncthing_workaround 
+        exit $?
+        ;;
 esac
