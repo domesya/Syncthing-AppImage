@@ -88,7 +88,7 @@ if [ -z "${1:-}" ]; then
     exit $?
 fi
 
-case "$1" in
+case "${1:-}" in
     --)
         shift
         ;;
